@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Bot Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Tùy chỉnh thanh cuộn cho khu vực log */
+        #logs-container::-webkit-scrollbar { width: 6px; }
+        #logs-container::-webkit-scrollbar-track { background: #1f2937; }
+        #logs-container::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        .blinking { animation: blinker 1.5s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0.2; } }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 font-sans min-h-screen">
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center border-b border-gray-700 pb-4 mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+                    🚀 Dashboard Trading Bot
+                    <span id="connection-status" class="w-3 h-3 bg-green-500 rounded-full blinking"></span>
+                </h1>
+                <p class="text-gray-400 mt-1">Hệ thống theo dõi và quản lý tự động (Khung: 1h - 6h - 1w)</p>
+            </div>
+            
+            <!-- Kill Switch Button -->
+            <div>
+                <button id="btn-killswitch" onclick="toggleKillSwitch()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition duration-200 ease-in-out transform hover:scale-105 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <span id="killswitch-text">KÍCH HOẠT KILL SWITCH</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Cột trái: Thống kê & Trạng thái -->
+            <div class="space-y-6">
+                <!-- Thẻ Tóm tắt PnL -->
+                <div class="bg-gray-800 rounded-xl p-6 shadow-md border border-gray-700">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-300 border-b border-gray-700 pb-2">Hiệu suất (PnL)</h2>
+                    <div class="text-4xl font-bold mb-2 transition-colors duration-300" id="total_pnl">0.0000 USDT</div>
+                    <div class="grid grid-cols-3 gap-3 mt-4">
+                        <div class="bg-gray-900 p-3 rounded-lg text-center border border-gray-700">
+                            <div class="text-xs text-gray-400">Winrate</div>
+                            <div class="text-lg font-bold text-blue-400" id="win_rate">0%</div>
+                        </div>
+                        <div class="bg-gray-900 p-3 rounded-lg text-center border border-gray-700">
+                            <div class="text-xs text-gray-400">Số Lệnh</div>
+                            <div class="text-lg font-bold text-yellow-400" id="total_trades">0</div>
+                        </div>
+                        <div class="bg-gray-900 p-3 rounded-lg text-center border border-gray-700">
+                            <div class="text-xs text-gray-400">Profit Factor</div>
+                            <div class="text-lg font-bold text-purple-400" id="profit_factor">0.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ Vị thế hiện tại -->
+                <div class="bg-gray-800 rounded-xl p-6 shadow-md border border-gray-700">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-300 border-b border-gray-700 pb-2">Vị thế hiện tại</h2>
+                    <div class="flex items-center justify-center p-6 bg-gray-900 rounded-lg border border-gray-700">
+                        <span id="position_status" class="text-3xl font-extrabold tracking-widest text-gray-500 transition-colors duration-300">NONE</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột Giữa: Chỉ báo Kỹ thuật -->
+            <div class="bg-gray-800 rounded-xl p-6 shadow-md border border-gray-700">
+                <h2 class="text-xl font-semibold mb-4 text-gray-300 border-b border-gray-700 pb-2">Trạng thái Chỉ báo</h2>
+                <div id="indicators-container" class="space-y-4">
+                    <div class="text-gray-400 text-center py-4">Đang tải dữ liệu...</div>
+                </div>
+            </div>
+
+            <!-- Cột Phải: Logs Hệ thống -->
+            <div class="bg-gray-800 rounded-xl shadow-md border border-gray-700 flex flex-col h-full">
+                <div class="p-4 border-b border-gray-700 bg-gray-800 rounded-t-xl">
+                    <h2 class="text-xl font-semibold text-gray-300">Terminal Logs</h2>
+                </div>
+                <div id="logs-container" class="p-4 overflow-y-auto h-96 md:h-[500px] font-mono text-sm space-y-1 bg-black rounded-b-xl text-green-400">
+                    <!-- Logs sẽ được chèn vào đây -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Script điều khiển -->
+    <script>
+        const formatNumber = (num, decimals = 4) => Number(num).toFixed(decimals);
+
+        async function fetchStats() {
+            try {
+                const response = await fetch('/api/stats');
+                if (!response.ok) throw new Error("Network error");
+                const data = await response.json();
+
+                document.getElementById('connection-status').classList.replace('bg-red-500', 'bg-green-500');
+
+                // Cập nhật PnL
+                const pnlEl = document.getElementById('total_pnl');
+                pnlEl.innerText = `${formatNumber(data.total_pnl)} USDT`;
+                if (data.total_pnl > 0) pnlEl.className = "text-4xl font-bold mb-2 text-green-500";
+                else if (data.total_pnl < 0) pnlEl.className = "text-4xl font-bold mb-2 text-red-500";
+                else pnlEl.className = "text-4xl font-bold mb-2 text-gray-300";
+
+                // Cập nhật Thống kê
+                document.getElementById('win_rate').innerText = `${data.win_rate}%`;
+                document.getElementById('total_trades').innerText = data.total_trades;
+                document.getElementById('profit_factor').innerText = data.profit_factor;
+
+                // Cập nhật Vị thế
+                const posEl = document.getElementById('position_status');
+                posEl.innerText = data.position;
+                if (data.position === "LONG") posEl.className = "text-3xl font-extrabold tracking-widest text-green-500";
+                else if (data.position === "SHORT") posEl.className = "text-3xl font-extrabold tracking-widest text-red-500";
+                else posEl.className = "text-3xl font-extrabold tracking-widest text-gray-500";
+
+                // Cập nhật Kill Switch State
+                const ksBtn = document.getElementById('btn-killswitch');
+                const ksText = document.getElementById('killswitch-text');
+                if (data.kill_switch_active) {
+                    ksBtn.classList.replace('bg-red-600', 'bg-yellow-600');
+                    ksBtn.classList.replace('hover:bg-red-700', 'hover:bg-yellow-700');
+                    ksText.innerText = "ĐANG TẠM DỪNG (KILL SWITCH ON)";
+                    ksBtn.classList.add('blinking');
+                } else {
+                    ksBtn.classList.replace('bg-yellow-600', 'bg-red-600');
+                    ksBtn.classList.replace('hover:bg-yellow-700', 'hover:bg-red-700');
+                    ksText.innerText = "KÍCH HOẠT KILL SWITCH";
+                    ksBtn.classList.remove('blinking');
+                }
+
+                // Cập nhật Logs
+                const logsContainer = document.getElementById('logs-container');
+                const isScrolledToBottom = logsContainer.scrollHeight - logsContainer.clientHeight <= logsContainer.scrollTop + 10;
+                
+                logsContainer.innerHTML = '';
+                data.logs.forEach(log => {
+                    const div = document.createElement('div');
+                    // highlight một số keyword
+                    let htmlLog = log.replace("✅", "<span class='text-green-500'>✅</span>")
+                                     .replace("⚠️", "<span class='text-yellow-500'>⚠️</span>")
+                                     .replace("🔴", "<span class='text-red-500'>🔴</span>")
+                                     .replace("🟢", "<span class='text-green-500'>🟢</span>");
+                    div.innerHTML = htmlLog;
+                    logsContainer.appendChild(div);
+                });
+
+                if (isScrolledToBottom) {
+                    logsContainer.scrollTop = logsContainer.scrollHeight;
+                }
+
+                // Cập nhật Indicators theo format của Python Backend (1h, 6h, 1w)
+                const indContainer = document.getElementById('indicators-container');
+                if (data.indicators && Object.keys(data.indicators).length > 0) {
+                    indContainer.innerHTML = '';
+                    const timeframes = ['1h', '6h', '1w'];
+                    timeframes.forEach(tf => {
+                        if(data.indicators[tf]) {
+                            const ind = data.indicators[tf];
+                            const macdColor = ind.macd_t0 > ind.macd_t1 ? 'text-green-400' : 'text-red-400';
+                            const stochColor = ind.stoch_k_t0 > ind.stoch_d_t0 ? 'text-green-400' : 'text-red-400';
+                            
+                            indContainer.innerHTML += `
+                                <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 transition-colors duration-300 hover:border-gray-500">
+                                    <h3 class="text-lg font-bold text-white mb-2 border-b border-gray-800 pb-1">Khung ${tf.toUpperCase()}</h3>
+                                    <div class="grid grid-cols-2 gap-2 text-sm">
+                                        <div class="text-gray-400">MACD Trend: <span class="${macdColor} font-bold">${ind.macd_t0 > ind.macd_t1 ? 'TĂNG ↗' : 'GIẢM ↘'}</span></div>
+                                        <div class="text-gray-400">MACD Val: <span class="text-white font-mono">${formatNumber(ind.macd_t0)}</span></div>
+                                        <div class="text-gray-400">Stoch RSI: <span class="${stochColor} font-bold">${ind.stoch_k_t0 > ind.stoch_d_t0 ? 'BULL (K&gt;D)' : 'BEAR (K&lt;D)'}</span></div>
+                                        <div class="text-gray-400">K/D: <span class="text-white font-mono">${formatNumber(ind.stoch_k_t0, 2)} / ${formatNumber(ind.stoch_d_t0, 2)}</span></div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                }
+
+            } catch (error) {
+                console.error("Lỗi cập nhật API:", error);
+                document.getElementById('connection-status').classList.replace('bg-green-500', 'bg-red-500');
+            }
+        }
+
+        async function toggleKillSwitch() {
+            const pwd = prompt("CẢNH BÁO: Bật Kill Switch sẽ đóng vị thế hiện tại và dừng vào lệnh.\n\nVui lòng nhập mật khẩu xác nhận (Mặc định: admin123):");
+            if (!pwd) return;
+
+            try {
+                const response = await fetch('/api/kill-switch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: pwd })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert(`Thành công! Trạng thái Kill Switch hiện tại: ${result.kill_switch_active ? 'ĐANG BẬT' : 'ĐÃ TẮT'}`);
+                    fetchStats(); // Force update
+                } else {
+                    alert(`Thất bại: ${result.message}`);
+                }
+            } catch (error) {
+                alert("Lỗi kết nối tới máy chủ khi kích hoạt Kill Switch.");
+            }
+        }
+
+        // Lấy dữ liệu mỗi 2 giây
+        fetchStats();
+        setInterval(fetchStats, 2000);
+    </script>
+</body>
+</html>
